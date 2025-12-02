@@ -7,16 +7,29 @@ import usersRouter from './routes/users.js';
 import authRouter from './routes/auth.js';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-// Izinkan akses dari frontend lokal dan deployment Vercel
+// Izinkan akses dari frontend lokal dan seluruh deployment Vercel (*.vercel.app)
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://piring-sehat.vercel.app',
-]
+];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Request tanpa origin (misal dari server-side) langsung diizinkan
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Izinkan semua subdomain vercel.app (misalnya preview/prod URL Vercel)
+    if (/\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
 }));
 
 app.use(express.json());
